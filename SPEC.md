@@ -89,8 +89,7 @@ For each discovered repo the following is determined:
 | No remote configured | Repo has no remote |
 | Detached HEAD | Not on a named branch |
 
-> **Note:** Remote sync checks (`ahead`/`behind`) require network access to fetch remote state. This may be slow. A `--no-fetch` flag skips this check and relies on last known remote state only.
-> *(Decision open: fetch automatically by default, or require explicit flag?)*
+> **Note:** Remote sync checks (`ahead`/`behind`) require network access to fetch remote state. By default, last known remote state is used. Pass `--fetch` to trigger a live fetch before checking.
 
 ---
 
@@ -135,8 +134,9 @@ gitcheck [flags]
 Flags:
   --config <path>     Path to config file
   --verbose           Show all repos, not only those needing attention
-  --no-fetch          Skip remote fetch; use last known remote state
+  --fetch             Fetch from remote before checking ahead/behind state
   --no-color          Disable colored output
+  --json              Output results as JSON
   --help              Show help
   --version           Show version
 ```
@@ -152,8 +152,6 @@ Flags:
 
 ---
 
-## Open Questions
+## Future Scope
 
-1. Should remote fetch happen automatically by default, or behind an explicit `--fetch` flag?
-2. Should a `--json` output format be supported for scripting?
-3. Should individual repos be configurable in addition to root paths (future scope)?
+- Individual repo entries in config (in addition to root paths)

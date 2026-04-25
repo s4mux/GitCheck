@@ -198,6 +198,6 @@ No mocking of the `git` binary – integration tests on real repos are more reli
 
 ## Future Considerations
 
-- `--json` output: add a `report.RenderJSON` function; no structural change needed
+- `--json` output: `report.RenderJSON(w io.Writer, repos []Repo)` alongside `Render`; no structural change needed
 - Individual repo entries in config: scanner accepts both roots and explicit paths; additive change
 - `--watch` mode: periodic re-scan; wrapper around existing flow
