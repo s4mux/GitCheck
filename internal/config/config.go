@@ -6,6 +6,10 @@ import "errors"
 // path and no explicit path was provided.
 var ErrNoConfig = errors.New("no config file found")
 
+// ErrEmptyRoots is returned by Load when a config file exists but scan.roots
+// is empty. Callers can use this to trigger an interactive add-root flow.
+var ErrEmptyRoots = errors.New("config: scan.roots must have at least one entry")
+
 type Config struct {
 	Scan ScanConfig `toml:"scan"`
 }

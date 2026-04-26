@@ -123,7 +123,7 @@ func runConfigRemove(cmd *cobra.Command, args []string) error {
 func loadOrEmpty() (config.Config, error) {
 	cfg, err := config.Load("")
 	if err != nil {
-		if errors.Is(err, config.ErrNoConfig) {
+		if errors.Is(err, config.ErrNoConfig) || errors.Is(err, config.ErrEmptyRoots) {
 			return config.Config{}, nil
 		}
 		return config.Config{}, err

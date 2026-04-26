@@ -25,7 +25,7 @@ func Load(path string) (Config, error) {
 	}
 
 	if len(cfg.Scan.Roots) == 0 {
-		return Config{}, fmt.Errorf("config: scan.roots must have at least one entry")
+		return Config{}, fmt.Errorf("%w", ErrEmptyRoots)
 	}
 
 	cfg.Scan.Roots = expandPaths(cfg.Scan.Roots)

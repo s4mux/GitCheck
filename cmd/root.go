@@ -54,12 +54,17 @@ func run(cmd *cobra.Command, args []string) error {
 
 	cfg, err := config.Load(configPath)
 	if err != nil {
-		if errors.Is(err, config.ErrNoConfig) && configPath == "" {
-			cfg, err = runFirstRunSetup(cmd)
-			if err != nil {
-				return err
-			}
-		} else {
+		var prompt string
+		switch {
+		case errors.Is(err, config.ErrNoConfig) && configPath == "":
+			prompt = "No config file found. Which folder should gitcheck scan?"
+		case errors.Is(err, config.ErrEmptyRoots) && configPath == "":
+			prompt = "No scan roots configured. Which folder should gitcheck scan?"
+		default:
+			return err
+		}
+		cfg, err = runFirstRunSetup(cmd, prompt)
+		if err != nil {
 			return err
 		}
 	}
@@ -92,21 +97,21 @@ func run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runFirstRunSetup(cmd *cobra.Command) (config.Config, error) {
+func runFirstRunSetup(cmd *cobra.Command, prompt string) (config.Config, error) {
 	if !isStdinTTY() {
 		return config.Config{}, fmt.Errorf(
-			"no config file found and stdin is not a terminal; " +
+			"no scan roots configured and stdin is not a terminal; " +
 				"create a config file or run gitcheck interactively")
 	}
 	writePath, err := config.DefaultWritePath()
 	if err != nil {
 		return config.Config{}, err
 	}
-	return doFirstRunSetup(cmd.InOrStdin(), cmd.OutOrStdout(), writePath)
+	return doFirstRunSetup(cmd.InOrStdin(), cmd.OutOrStdout(), writePath, prompt)
 }
 
-func doFirstRunSetup(r io.Reader, w io.Writer, writePath string) (config.Config, error) {
-	fmt.Fprintln(w, "No config file found. Which folder should gitcheck scan?")
+func doFirstRunSetup(r io.Reader, w io.Writer, writePath string, prompt string) (config.Config, error) {
+	fmt.Fprintln(w, prompt)
 	fmt.Fprint(w, "> ")
 	reader := bufio.NewReader(r)
 	line, err := reader.ReadString('\n')

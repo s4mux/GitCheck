@@ -16,7 +16,7 @@ func TestDoFirstRunSetup(t *testing.T) {
 	input := strings.NewReader("~/projects\n")
 	var out bytes.Buffer
 
-	cfg, err := doFirstRunSetup(input, &out, writePath)
+	cfg, err := doFirstRunSetup(input, &out, writePath, "Which folder?")
 	if err != nil {
 		t.Fatalf("doFirstRunSetup: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestDoFirstRunSetup_emptyInput(t *testing.T) {
 	input := strings.NewReader("\n")
 	var out bytes.Buffer
 
-	_, err := doFirstRunSetup(input, &out, writePath)
+	_, err := doFirstRunSetup(input, &out, writePath, "Which folder?")
 	if err == nil {
 		t.Fatal("expected error for empty input")
 	}
@@ -48,7 +48,7 @@ func TestDoFirstRunSetup_eofNoInput(t *testing.T) {
 	input := strings.NewReader("")
 	var out bytes.Buffer
 
-	_, err := doFirstRunSetup(input, &out, writePath)
+	_, err := doFirstRunSetup(input, &out, writePath, "Which folder?")
 	if err == nil {
 		t.Fatal("expected error for EOF with no path")
 	}
@@ -61,7 +61,7 @@ func TestDoFirstRunSetup_writesConfig(t *testing.T) {
 	input := strings.NewReader("/my/repos\n")
 	var out bytes.Buffer
 
-	_, err := doFirstRunSetup(input, &out, writePath)
+	_, err := doFirstRunSetup(input, &out, writePath, "Which folder?")
 	if err != nil {
 		t.Fatalf("doFirstRunSetup: %v", err)
 	}
