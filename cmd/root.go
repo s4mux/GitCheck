@@ -1,9 +1,13 @@
 package cmd
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"runtime"
+	"strings"
 	"sync"
 
 	"github.com/s4mux/gitcheck/internal/config"
@@ -50,7 +54,14 @@ func run(cmd *cobra.Command, args []string) error {
 
 	cfg, err := config.Load(configPath)
 	if err != nil {
-		return err
+		if errors.Is(err, config.ErrNoConfig) && configPath == "" {
+			cfg, err = runFirstRunSetup(cmd)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 
 	s := &scanner.Scanner{
@@ -73,6 +84,47 @@ func run(cmd *cobra.Command, args []string) error {
 		UseColor: !noColor && report.IsTTY(os.Stdout),
 	})
 	return nil
+}
+
+func runFirstRunSetup(cmd *cobra.Command) (config.Config, error) {
+	if !isStdinTTY() {
+		return config.Config{}, fmt.Errorf(
+			"no config file found and stdin is not a terminal; " +
+				"create a config file or run gitcheck interactively")
+	}
+	writePath, err := config.DefaultWritePath()
+	if err != nil {
+		return config.Config{}, err
+	}
+	return doFirstRunSetup(cmd.InOrStdin(), cmd.OutOrStdout(), writePath)
+}
+
+func doFirstRunSetup(r io.Reader, w io.Writer, writePath string) (config.Config, error) {
+	fmt.Fprintln(w, "No config file found. Which folder should gitcheck scan?")
+	fmt.Fprint(w, "> ")
+	reader := bufio.NewReader(r)
+	line, err := reader.ReadString('\n')
+	if err != nil && (err != io.EOF || strings.TrimSpace(line) == "") {
+		return config.Config{}, fmt.Errorf("first-run setup: reading input: %w", err)
+	}
+	root := strings.TrimSpace(line)
+	if root == "" {
+		return config.Config{}, fmt.Errorf("first-run setup: no path provided")
+	}
+	cfg := config.Config{Scan: config.ScanConfig{Roots: []string{root}}}
+	if err := config.Save(writePath, cfg); err != nil {
+		return config.Config{}, fmt.Errorf("first-run setup: %w", err)
+	}
+	fmt.Fprintf(w, "Config saved to %s\n", writePath)
+	return config.Load(writePath)
+}
+
+func isStdinTTY() bool {
+	fi, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	return (fi.Mode() & os.ModeCharDevice) != 0
 }
 
 func resolveRepos(paths []string, fetchRemote bool) []git.Repo {

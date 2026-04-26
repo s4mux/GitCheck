@@ -34,6 +34,15 @@ func Load(path string) (Config, error) {
 	return cfg, nil
 }
 
+// configHome returns the XDG config home directory, reading the environment
+// at call time so that tests can override XDG_CONFIG_HOME via t.Setenv.
+func configHome() string {
+	if v := os.Getenv("XDG_CONFIG_HOME"); v != "" {
+		return v
+	}
+	return xdg.ConfigHome
+}
+
 func findConfigPath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -41,7 +50,7 @@ func findConfigPath() (string, error) {
 	}
 
 	candidates := []string{
-		filepath.Join(xdg.ConfigHome, "gitcheck", "config.toml"),
+		filepath.Join(configHome(), "gitcheck", "config.toml"),
 		filepath.Join(home, ".gitcheck.toml"),
 	}
 
@@ -51,7 +60,41 @@ func findConfigPath() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("no config file found; checked: %s", strings.Join(candidates, ", "))
+	return "", fmt.Errorf("%w; checked: %s", ErrNoConfig, strings.Join(candidates, ", "))
+}
+
+// DefaultWritePath returns the canonical path where Save writes a new config
+// file — always the XDG candidate, regardless of whether it exists.
+func DefaultWritePath() (string, error) {
+	return filepath.Join(configHome(), "gitcheck", "config.toml"), nil
+}
+
+// Save writes cfg to path as TOML, creating parent directories as needed.
+// The write is atomic: a temp file is written first, then renamed into place.
+func Save(path string, cfg Config) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return fmt.Errorf("save config: create directory: %w", err)
+	}
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".gitcheck-config-*.toml")
+	if err != nil {
+		return fmt.Errorf("save config: create temp file: %w", err)
+	}
+	tmpName := tmp.Name()
+	encErr := toml.NewEncoder(tmp).Encode(cfg)
+	closeErr := tmp.Close()
+	if encErr != nil {
+		os.Remove(tmpName)
+		return fmt.Errorf("save config: encode: %w", encErr)
+	}
+	if closeErr != nil {
+		os.Remove(tmpName)
+		return fmt.Errorf("save config: close: %w", closeErr)
+	}
+	if err := os.Rename(tmpName, path); err != nil {
+		os.Remove(tmpName)
+		return fmt.Errorf("save config: rename: %w", err)
+	}
+	return nil
 }
 
 func expandPaths(paths []string) []string {
