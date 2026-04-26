@@ -1,5 +1,7 @@
 # gitcheck
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 See the state of all your local Git repositories in one shot.
 
 ```
