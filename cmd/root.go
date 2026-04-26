@@ -64,6 +64,12 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if !jsonOut {
+		if resolvedPath, err := config.ResolvePath(configPath); err == nil {
+			fmt.Fprintf(os.Stderr, "config: %s\n", resolvedPath)
+		}
+	}
+
 	s := &scanner.Scanner{
 		Ignore: scanner.NewIgnoreRules(cfg.Scan.Ignore.Paths, cfg.Scan.Ignore.Patterns),
 	}

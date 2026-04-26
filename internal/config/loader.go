@@ -63,6 +63,16 @@ func findConfigPath() (string, error) {
 	return "", fmt.Errorf("%w; checked: %s", ErrNoConfig, strings.Join(candidates, ", "))
 }
 
+// ResolvePath returns the config file path that Load would use. If path is
+// non-empty it is returned as-is; otherwise the standard candidates are
+// checked in order.
+func ResolvePath(path string) (string, error) {
+	if path != "" {
+		return path, nil
+	}
+	return findConfigPath()
+}
+
 // DefaultWritePath returns the canonical path where Save writes a new config
 // file — always the XDG candidate, regardless of whether it exists.
 func DefaultWritePath() (string, error) {
