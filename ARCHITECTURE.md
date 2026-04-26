@@ -17,11 +17,12 @@
 gitcheck/
 ├── main.go
 ├── cmd/
-│   └── root.go              # cobra root command, flag wiring
+│   ├── root.go              # cobra root command, flag wiring, first-run setup
+│   └── config.go            # gitcheck config list/add/remove subcommand
 ├── internal/
 │   ├── config/
-│   │   ├── config.go        # Config struct, defaults
-│   │   └── loader.go        # File resolution, TOML parsing
+│   │   ├── config.go        # Config struct, ErrNoConfig, ErrEmptyRoots
+│   │   └── loader.go        # File resolution, TOML parsing, Save, DefaultWritePath
 │   ├── scanner/
 │   │   ├── scanner.go       # Entry point: walk roots, apply ignore rules
 │   │   └── ignore.go        # Path and pattern matching
@@ -42,23 +43,33 @@ gitcheck/
 
 ### `config`
 
-Loads and validates configuration. Resolves `~` in paths. Determines config file location via XDG convention. Exposes a single `Config` struct; nothing else in the codebase reads files or env vars for configuration.
+Loads, validates, and writes configuration. Resolves `~` in paths. Determines config file location via XDG convention. Exposes a single `Config` struct; nothing else in the codebase reads files or env vars for configuration.
+
+Key exports:
 
 ```go
+var ErrNoConfig  = errors.New("no config file found")
+var ErrEmptyRoots = errors.New("config: scan.roots must have at least one entry")
+
+func Load(path string) (Config, error)       // load + validate; path="" → auto-resolve
+func ResolvePath(path string) (string, error) // resolve without loading
+func Save(path string, cfg Config) error      // atomic write (temp file + rename)
+func DefaultWritePath() (string, error)       // XDG path used for new configs
+
 type Config struct {
-    Scan ScanConfig
+    Scan ScanConfig `toml:"scan"`
 }
-
 type ScanConfig struct {
-    Roots  []string
-    Ignore IgnoreConfig
+    Roots  []string     `toml:"roots"`
+    Ignore IgnoreConfig `toml:"ignore"`
 }
-
 type IgnoreConfig struct {
-    Paths    []string
-    Patterns []string
+    Paths    []string `toml:"paths"`
+    Patterns []string `toml:"patterns"`
 }
 ```
+
+`ErrNoConfig` and `ErrEmptyRoots` are sentinel errors wrapped with `%w` so callers use `errors.Is` to distinguish recoverable config states from hard failures.
 
 ### `scanner`
 
@@ -179,7 +190,8 @@ No circular dependencies. `internal/` packages do not import each other except `
 ## Error Strategy
 
 - Errors from individual repos are collected and reported at the end, not fatal
-- Config errors are fatal (exit 1) with a clear message
+- `ErrNoConfig` / `ErrEmptyRoots` (no config file or empty roots): interactive prompt on TTY, fatal on non-TTY
+- Other config errors (bad TOML, unreadable file): fatal (exit 1) with a clear message
 - `git` not in PATH is detected at startup, fatal
 - All errors are written to stderr; report goes to stdout
 
@@ -198,6 +210,5 @@ No mocking of the `git` binary – integration tests on real repos are more reli
 
 ## Future Considerations
 
-- `--json` output: `report.RenderJSON(w io.Writer, repos []Repo)` alongside `Render`; no structural change needed
 - Individual repo entries in config: scanner accepts both roots and explicit paths; additive change
 - `--watch` mode: periodic re-scan; wrapper around existing flow

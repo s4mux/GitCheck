@@ -38,7 +38,24 @@ Move the binary somewhere on your `$PATH`, e.g. `/usr/local/bin/`.
 
 ## Configure
 
-Create a config file at one of these locations (checked in order):
+On first run, `gitcheck` will ask which folder to scan and create a config file automatically:
+
+```
+$ gitcheck
+No config file found. Which folder should gitcheck scan?
+> ~/projects
+Config saved to /home/user/.config/gitcheck/config.toml
+```
+
+You can also manage roots directly with the `config` subcommand:
+
+```sh
+gitcheck config add ~/work       # add a scan root
+gitcheck config remove ~/work    # remove a scan root
+gitcheck config list             # show all configured roots
+```
+
+Or create/edit the config file manually. It is looked up in order:
 
 | Path | Notes |
 |------|-------|
@@ -95,7 +112,12 @@ patterns = [
 
 ```
 gitcheck [flags]
+gitcheck config list
+gitcheck config add <path>
+gitcheck config remove <path>
 ```
+
+### Flags
 
 | Flag | Description |
 |------|-------------|
@@ -103,9 +125,11 @@ gitcheck [flags]
 | `--verbose` | Show all repos, including clean ones |
 | `--fetch` | Fetch from remote before checking ahead/behind (slower, always accurate) |
 | `--no-color` | Disable colored output |
-| `--json` | Output results as JSON |
+| `--json` | Output results as JSON (suppresses config path line) |
 | `--version` | Print version and exit |
 | `--help` | Show help |
+
+The active config file path is printed to stderr on each run.
 
 ### Examples
 

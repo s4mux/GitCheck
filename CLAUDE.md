@@ -20,6 +20,8 @@ Binary name: `gitcheck`. Entry point: `main.go` → `cmd/root.go`.
 
 Flags: `--config`, `--verbose`, `--fetch` (live remote fetch; default uses last known state), `--no-color`, `--json`.
 
+Subcommands: `gitcheck config list|add|remove` — manage scan roots without editing TOML by hand.
+
 ## Architecture
 
 Four internal packages with strict one-way dependency flow. See `ARCHITECTURE.md` for full detail.
@@ -30,7 +32,7 @@ report  →  git (types only)
 scanner, git, config  →  (nothing internal)
 ```
 
-**`internal/config`** — loads `config.toml` (XDG or `~/.gitcheck.toml`), resolves `~`, exposes a single `Config` struct. The only place that reads files/env for configuration.
+**`internal/config`** — loads, validates, and writes `config.toml` (XDG or `~/.gitcheck.toml`), resolves `~`, exposes a single `Config` struct. Sentinel errors `ErrNoConfig` and `ErrEmptyRoots` allow callers to trigger interactive setup. `Save()` writes atomically. The only place that reads files/env for configuration.
 
 **`internal/scanner`** — walks roots, applies ignore rules, returns `[]string` of repo paths. Stops recursion at `.git`. Knows nothing about Git internals.
 

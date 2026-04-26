@@ -129,23 +129,39 @@ Color output is enabled by default when stdout is a TTY. Disabled automatically 
 
 ```
 gitcheck [flags]
+gitcheck config list
+gitcheck config add <path>
+gitcheck config remove <path>
 
 Flags:
   --config <path>     Path to config file
   --verbose           Show all repos, not only those needing attention
   --fetch             Fetch from remote before checking ahead/behind state
   --no-color          Disable colored output
-  --json              Output results as JSON
+  --json              Output results as JSON (suppresses config path line)
   --help              Show help
   --version           Show version
 ```
+
+### First-run setup
+
+When no config file is found (or it exists but has no roots), `gitcheck` prompts the user interactively for a scan root and saves the config to the XDG path. When stdin is not a terminal (piped/CI), a clear error is returned instead.
+
+### Config subcommand
+
+`gitcheck config add <path>` and `gitcheck config remove <path>` read the current config (or start from empty if none exists), modify the roots list, and write back atomically. `gitcheck config list` prints the current roots. All writes go to the XDG config path.
+
+### Startup output
+
+The active config file path is printed to stderr on each `gitcheck` run. Suppressed when `--json` is set.
 
 ---
 
 ## Error Handling
 
 - Unreadable directory: warning printed, scanning continues
-- Invalid config: fatal error with clear message
+- Config not found or roots empty: interactive prompt (TTY) or fatal error (non-TTY)
+- Invalid config (bad TOML, other errors): fatal error with clear message
 - Repo with no remote: reported as status `[no remote]`, not an error
 - Git not found in PATH: fatal error
 
