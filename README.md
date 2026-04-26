@@ -145,7 +145,7 @@ gitcheck --json | jq '.[] | select(.status.ahead_by > 0) | .path'
 | `[ahead N]` | N local commits not yet pushed |
 | `[behind N]` | N remote commits not yet pulled |
 | `[no remote]` | No remote configured |
-| `[detached HEAD]` | Not on a named branch |
+| `[detached HEAD]` | Not on a named branch (never shown for submodules — always expected there) |
 
 Without `--fetch`, ahead/behind counts reflect the last known remote state (last fetch/pull). Pass `--fetch` for live accuracy.
 

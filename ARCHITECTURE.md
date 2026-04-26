@@ -103,7 +103,7 @@ func GetSubmodules(repoPath string) ([]string, error)  // returns paths
 func BuildRepo(repoPath string, fetchRemote bool) (Repo, error)
 ```
 
-`BuildRepo` composes status + submodule resolution into a complete `Repo`. Submodule paths are resolved recursively via the same function.
+`BuildRepo` composes status + submodule resolution into a complete `Repo`. Submodule paths are resolved recursively via the same function. `DetachedHEAD` is cleared on submodule results — submodules are always in detached HEAD by design, so reporting it would be noise.
 
 ### `report`
 

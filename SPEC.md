@@ -71,7 +71,7 @@ patterns = [
 ### Submodule handling
 
 - Submodules are discovered via `.gitmodules`, not by scanning
-- Each submodule is treated identically to a top-level repo (same status checks)
+- Each submodule undergoes the same status checks as a top-level repo, with one exception: `DetachedHEAD` is suppressed because submodules are always checked out to a specific commit — detached HEAD is their normal state, not a problem
 - Nested submodules (submodules within submodules) are supported recursively
 
 ---

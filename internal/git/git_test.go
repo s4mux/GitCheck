@@ -163,3 +163,37 @@ func TestBuildRepo_basic(t *testing.T) {
 		t.Fatalf("expected path %s, got %s", dir, repo.Path)
 	}
 }
+
+func TestBuildRepo_submodule_no_detached_head(t *testing.T) {
+	// Submodules are always in detached HEAD — this must not be reported as a problem.
+	subDir := initRepo(t)
+	if err := os.WriteFile(filepath.Join(subDir, "f.txt"), []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	exec.Command("git", "-C", subDir, "add", "f.txt").Run()
+	commit(t, subDir, "init sub")
+
+	parentDir := initRepo(t)
+	run := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = parentDir
+		cmd.Env = append(os.Environ(), "GIT_CONFIG_COUNT=1", "GIT_CONFIG_KEY_0=protocol.file.allow", "GIT_CONFIG_VALUE_0=always")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	run("submodule", "add", subDir, "sub")
+	run("commit", "-m", "add submodule")
+
+	repo, err := BuildRepo(parentDir, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repo.Submodules) != 1 {
+		t.Fatalf("expected 1 submodule, got %d", len(repo.Submodules))
+	}
+	if repo.Submodules[0].Status.DetachedHEAD {
+		t.Fatal("submodule must not report DetachedHEAD")
+	}
+}

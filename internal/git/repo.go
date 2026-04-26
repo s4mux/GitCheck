@@ -38,6 +38,7 @@ func BuildRepo(repoPath string, fetchRemote bool) (Repo, error) {
 		if subErr != nil {
 			continue
 		}
+		sub.Status.DetachedHEAD = false
 		subs = append(subs, sub)
 	}
 
