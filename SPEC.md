@@ -25,9 +25,8 @@ GitCheck is a CLI tool that scans configured root directories for local Git repo
 ### Location (resolved in order)
 
 1. `--config <path>` CLI flag
-2. `$XDG_CONFIG_HOME/gitcheck/config.toml`
-3. `~/.config/gitcheck/config.toml`
-4. `~/.gitcheck.toml`
+2. `$XDG_CONFIG_HOME/gitcheck/config.toml` (Unix) / `%APPDATA%\gitcheck\config.toml` (Windows)
+3. `~/.gitcheck.toml`
 
 ### Format
 

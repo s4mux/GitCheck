@@ -66,6 +66,23 @@ paths = ["~/projects/archived"]
 	}
 }
 
+func TestLoad_tildeBackslashExpansion(t *testing.T) {
+	dir := t.TempDir()
+	path := writeConfig(t, dir, `
+[scan]
+roots = ["~\\projects"]
+`)
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	home, _ := os.UserHomeDir()
+	want := filepath.Join(home, "projects")
+	if cfg.Scan.Roots[0] != want {
+		t.Fatalf("expected %s, got %s", want, cfg.Scan.Roots[0])
+	}
+}
+
 func TestLoad_invalidTOML(t *testing.T) {
 	dir := t.TempDir()
 	path := writeConfig(t, dir, `not valid toml [[[`)

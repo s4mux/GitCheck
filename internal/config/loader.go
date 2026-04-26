@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/adrg/xdg"
 )
 
 func Load(path string) (Config, error) {
@@ -34,21 +35,15 @@ func Load(path string) (Config, error) {
 }
 
 func findConfigPath() (string, error) {
-	var candidates []string
-
-	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
-		candidates = append(candidates, filepath.Join(xdg, "gitcheck", "config.toml"))
-	}
-
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("cannot determine home directory: %w", err)
 	}
 
-	candidates = append(candidates,
-		filepath.Join(home, ".config", "gitcheck", "config.toml"),
+	candidates := []string{
+		filepath.Join(xdg.ConfigHome, "gitcheck", "config.toml"),
 		filepath.Join(home, ".gitcheck.toml"),
-	)
+	}
 
 	for _, c := range candidates {
 		if _, err := os.Stat(c); err == nil {
@@ -63,7 +58,7 @@ func expandPaths(paths []string) []string {
 	home, _ := os.UserHomeDir()
 	result := make([]string, len(paths))
 	for i, p := range paths {
-		if strings.HasPrefix(p, "~/") {
+		if len(p) >= 2 && p[0] == '~' && (p[1] == '/' || p[1] == '\\') {
 			p = filepath.Join(home, p[2:])
 		}
 		result[i] = p
