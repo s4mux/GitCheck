@@ -28,12 +28,12 @@ var (
 var rootCmd = &cobra.Command{
 	Use:          "gitcheck",
 	Short:        "Report status of local Git repositories",
-	Version:      "0.1.0",
 	SilenceUsage: true,
 	RunE:         run,
 }
 
-func Execute() {
+func Execute(version string) {
+	rootCmd.Version = version
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}

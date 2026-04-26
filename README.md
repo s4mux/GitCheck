@@ -20,6 +20,18 @@ $ gitcheck
 
 ## Install
 
+**Pre-built binary** (no Go required):
+
+Download the archive for your platform from the [Releases page](https://github.com/s4mux/gitcheck/releases), extract, and move the binary onto your `$PATH`:
+
+```sh
+# Linux / macOS
+tar -xzf gitcheck_<version>_linux_amd64.tar.gz
+mv gitcheck /usr/local/bin/
+
+# Windows — extract the .zip and move gitcheck.exe to a directory in %PATH%
+```
+
 **Go** (requires Go 1.21+):
 
 ```sh
@@ -32,9 +44,8 @@ go install github.com/s4mux/gitcheck@latest
 git clone https://github.com/s4mux/gitcheck
 cd gitcheck
 go build -o gitcheck .
+mv gitcheck /usr/local/bin/
 ```
-
-Move the binary somewhere on your `$PATH`, e.g. `/usr/local/bin/`.
 
 ---
 
@@ -188,5 +199,5 @@ Without `--fetch`, ahead/behind counts reflect the last known remote state (last
 
 ## Requirements
 
-- Go 1.21+ (to build)
 - `git` must be in `$PATH` at runtime
+- Go 1.21+ only required to build from source; pre-built binaries have no build dependency

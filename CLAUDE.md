@@ -50,6 +50,19 @@ Concurrency: `cmd` resolves repo statuses in parallel via a worker pool (`runtim
 - **Error strategy**: per-repo errors are collected and reported at the end (non-fatal); config errors and missing `git` binary are fatal (exit 1).
 - **Testing**: `git` package tested against real temp repos created with `t.TempDir()` — no mocking of the `git` binary.
 
+## Releasing
+
+Releases are automated via GoReleaser (`.goreleaser.yaml`) and GitHub Actions (`.github/workflows/release.yml`). To cut a release:
+
+```bash
+git tag v0.x.0
+git push origin v0.x.0
+```
+
+The workflow builds for Linux/macOS (amd64+arm64) and Windows (amd64), and publishes a GitHub Release with `.tar.gz`/`.zip` archives and `checksums.txt`.
+
+Version is injected at build time via `-X main.version={{.Version}}` in `ldflags`. Local/dev builds show `dev` (the default value of `var version` in `main.go`).
+
 ## Stack
 
 - Language: Go
