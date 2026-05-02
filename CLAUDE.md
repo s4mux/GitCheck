@@ -42,6 +42,8 @@ scanner, git, config  →  (nothing internal)
 
 Concurrency: `cmd` resolves repo statuses in parallel via a worker pool (`runtime.NumCPU()` workers).
 
+**`cmd/progress.go`** — interactive TTY progress display. Two phases: "Scanning for repositories..." (single line while `scanner.Scan` runs), then a progress bar + current repo path (two lines, updated by the worker pool via `sync/atomic`). Self-erasing before the final report. No-op when stdout is not a TTY or `--json` is set.
+
 ## Key Principles (from PRINCIPLES.md)
 
 - **No cross-package leakage**: Git logic stays in `git`, ignore logic stays in `scanner/ignore.go`, formatting stays in `report`. If a package must change when its own responsibility hasn't changed, coupling is too high.

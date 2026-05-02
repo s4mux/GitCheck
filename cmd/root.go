@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/s4mux/gitcheck/internal/config"
 	"github.com/s4mux/gitcheck/internal/git"
@@ -79,12 +80,17 @@ func run(cmd *cobra.Command, args []string) error {
 		Ignore: scanner.NewIgnoreRules(cfg.Scan.Ignore.Paths, cfg.Scan.Ignore.Patterns),
 	}
 
+	prog := newProgress(os.Stdout, jsonOut)
+	prog.StartScanning()
+
 	paths, err := s.Scan(cfg.Scan.Roots)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warning: %v\n", err)
 	}
 
-	repos := resolveRepos(paths, fetch)
+	prog.FoundRepos(len(paths))
+	repos := resolveRepos(paths, fetch, prog)
+	prog.Done()
 
 	if jsonOut {
 		return report.RenderJSON(os.Stdout, repos)
@@ -138,9 +144,10 @@ func isStdinTTY() bool {
 	return (fi.Mode() & os.ModeCharDevice) != 0
 }
 
-func resolveRepos(paths []string, fetchRemote bool) []git.Repo {
+func resolveRepos(paths []string, fetchRemote bool, prog *Progress) []git.Repo {
 	results := make([]git.Repo, len(paths))
 	var wg sync.WaitGroup
+	var completed int32
 	sem := make(chan struct{}, runtime.NumCPU())
 
 	for i, path := range paths {
@@ -154,6 +161,8 @@ func resolveRepos(paths []string, fetchRemote bool) []git.Repo {
 				fmt.Fprintf(os.Stderr, "warning: %s: %v\n", path, err)
 			}
 			results[i] = repo
+			n := int(atomic.AddInt32(&completed, 1))
+			prog.RepoCompleted(n, len(paths), path)
 		}(i, path)
 	}
 	wg.Wait()

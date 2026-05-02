@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.1] - 2026-05-02
+
+### Added
+
+- Interactive TTY progress display: shows "Scanning for repositories..." during the directory walk, then a progress bar and the path of the most recently analyzed repo during parallel status resolution; the display erases itself before the final report is printed
+- Progress is automatically suppressed when stdout is not a TTY (pipes, `--json`, redirects) — no ANSI codes leak into captured output
 
 ## [0.1.0] - 2026-04-26
 
@@ -27,5 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parallel repository resolution via a worker pool sized to `runtime.NumCPU()`
 - Pre-built binaries for Linux, macOS, and Windows via GoReleaser and GitHub Actions
 
-[Unreleased]: https://github.com/s4mux/gitcheck/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/s4mux/gitcheck/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/s4mux/gitcheck/releases/tag/v0.1.1
 [0.1.0]: https://github.com/s4mux/gitcheck/releases/tag/v0.1.0

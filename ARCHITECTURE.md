@@ -18,7 +18,8 @@ gitcheck/
 ├── main.go
 ├── cmd/
 │   ├── root.go              # cobra root command, flag wiring, first-run setup
-│   └── config.go            # gitcheck config list/add/remove subcommand
+│   ├── config.go            # gitcheck config list/add/remove subcommand
+│   └── progress.go          # interactive TTY progress display (scan + analysis phases)
 ├── internal/
 │   ├── config/
 │   │   ├── config.go        # Config struct, ErrNoConfig, ErrEmptyRoots
@@ -152,6 +153,7 @@ Repo status resolution is I/O bound (subprocess + disk). Repos are independent. 
 // Conceptual – implementation detail of cmd layer
 results := make([]Repo, len(paths))
 var wg sync.WaitGroup
+var completed int32
 sem := make(chan struct{}, runtime.NumCPU())
 
 for i, path := range paths {
@@ -161,12 +163,37 @@ for i, path := range paths {
         sem <- struct{}{}
         defer func() { <-sem }()
         results[i], _ = git.BuildRepo(path, cfg.FetchRemote)
+        n := int(atomic.AddInt32(&completed, 1))
+        prog.RepoCompleted(n, len(paths), path)
     }(i, path)
 }
 wg.Wait()
 ```
 
 Pool size defaults to `runtime.NumCPU()`. Can be made configurable later if needed.
+
+---
+
+## Progress Display
+
+When stdout is a TTY and `--json` is not set, `cmd/progress.go` renders an interactive progress display that overwrites the same lines using ANSI escape codes. It is entirely within the `cmd` layer and invisible to internal packages.
+
+Two phases:
+
+1. **Scanning** (single line, while `scanner.Scan()` runs):
+   ```
+   Scanning for repositories...
+   ```
+
+2. **Analyzing** (two lines, while the worker pool runs):
+   ```
+   [=========>           ] 7/23
+   ~/Projects/myrepo/some-dir
+   ```
+
+Both phases erase themselves before the final report is printed. On non-TTY stdout (pipes, redirects) or with `--json`, the `Progress` struct is a no-op — no ANSI codes leak into captured output.
+
+ANSI sequences used: `\033[NA` (cursor up), `\r\033[2K` (clear line), `\033[J` (clear to end of screen on final erase).
 
 ---
 

@@ -16,6 +16,8 @@ $ gitcheck
 
 `gitcheck` scans your configured directories, finds every Git repository, and reports what needs attention — uncommitted changes, untracked files, ahead/behind remote, missing remotes, detached HEAD. Clean repos are silent. Submodules are shown indented under their parent.
 
+While running, `gitcheck` shows a live progress display in the terminal — first during the directory scan, then a progress bar as each repo is analyzed. The display erases itself before the final report is printed. It is automatically suppressed when stdout is not a TTY (pipes, redirects) or when `--json` is used.
+
 ---
 
 ## Install
