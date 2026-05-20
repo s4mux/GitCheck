@@ -76,12 +76,64 @@ func TestRender_submoduleIndented(t *testing.T) {
 func TestRenderJSON(t *testing.T) {
 	repos := []git.Repo{{Path: "/a", Status: git.RepoStatus{AheadBy: 2}}}
 	var buf bytes.Buffer
-	if err := RenderJSON(&buf, repos); err != nil {
+	if err := RenderJSON(&buf, repos, nil); err != nil {
 		t.Fatal(err)
 	}
 	out := buf.String()
 	if !strings.Contains(out, `"ahead_by": 2`) {
 		t.Fatalf("expected ahead_by in JSON, got: %q", out)
+	}
+	if !strings.Contains(out, `"repos"`) {
+		t.Fatalf("expected repos key in JSON, got: %q", out)
+	}
+}
+
+func TestRender_nonGitDir_tag(t *testing.T) {
+	var buf bytes.Buffer
+	Render(&buf, nil, Options{NonGitDirs: []string{"/no/git/here"}})
+	out := buf.String()
+	if !strings.Contains(out, "[no git]") {
+		t.Fatalf("expected [no git] tag, got: %q", out)
+	}
+	if !strings.Contains(out, "no/git/here") {
+		t.Fatalf("expected path in output, got: %q", out)
+	}
+}
+
+func TestRender_nonGitDir_shownWhenReposClean(t *testing.T) {
+	repos := []git.Repo{{Path: "/clean"}}
+	var buf bytes.Buffer
+	Render(&buf, repos, Options{NonGitDirs: []string{"/ungit"}})
+	out := buf.String()
+	if !strings.Contains(out, "[no git]") {
+		t.Fatalf("non-git dir should appear even when all repos are clean, got: %q", out)
+	}
+	if strings.Contains(out, "All repositories clean.") {
+		t.Fatalf("clean message should be suppressed when non-git dirs present, got: %q", out)
+	}
+}
+
+func TestRender_cleanMessage_suppressedByNonGitDirs(t *testing.T) {
+	repos := []git.Repo{{Path: "/clean"}}
+	var buf bytes.Buffer
+	Render(&buf, repos, Options{NonGitDirs: []string{"/ungit"}})
+	if strings.Contains(buf.String(), "All repositories clean.") {
+		t.Fatalf("clean message should not appear when non-git dirs are present")
+	}
+}
+
+func TestRenderJSON_nonGitDirs(t *testing.T) {
+	repos := []git.Repo{{Path: "/a"}}
+	var buf bytes.Buffer
+	if err := RenderJSON(&buf, repos, []string{"/ungit"}); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	if !strings.Contains(out, `"non_git_dirs"`) {
+		t.Fatalf("expected non_git_dirs key in JSON, got: %q", out)
+	}
+	if !strings.Contains(out, `"/ungit"`) {
+		t.Fatalf("expected ungit path in JSON, got: %q", out)
 	}
 }
 

@@ -34,12 +34,12 @@ func TestScan_findsDirectRepo(t *testing.T) {
 	repo := mkRepo(t, root, "myapp")
 
 	s := newScanner(nil, nil)
-	got, err := s.Scan([]string{root})
+	got, err := s.Scan([]string{root}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(got, repo) {
-		t.Fatalf("expected %s in results %v", repo, got)
+	if !slices.Contains(got.RepoPaths, repo) {
+		t.Fatalf("expected %s in results %v", repo, got.RepoPaths)
 	}
 }
 
@@ -49,12 +49,12 @@ func TestScan_findsNestedRepo(t *testing.T) {
 	repo := mkRepo(t, filepath.Join(root, "work/team"), "api")
 
 	s := newScanner(nil, nil)
-	got, err := s.Scan([]string{root})
+	got, err := s.Scan([]string{root}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(got, repo) {
-		t.Fatalf("expected %s in results %v", repo, got)
+	if !slices.Contains(got.RepoPaths, repo) {
+		t.Fatalf("expected %s in results %v", repo, got.RepoPaths)
 	}
 }
 
@@ -65,15 +65,15 @@ func TestScan_stopsAtRepoBoundary(t *testing.T) {
 	_ = inner
 
 	s := newScanner(nil, nil)
-	got, err := s.Scan([]string{root})
+	got, err := s.Scan([]string{root}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if slices.Contains(got, inner) {
-		t.Fatalf("inner repo should not be found when scanner stops at outer: %v", got)
+	if slices.Contains(got.RepoPaths, inner) {
+		t.Fatalf("inner repo should not be found when scanner stops at outer: %v", got.RepoPaths)
 	}
-	if !slices.Contains(got, outer) {
-		t.Fatalf("outer repo should be found: %v", got)
+	if !slices.Contains(got.RepoPaths, outer) {
+		t.Fatalf("outer repo should be found: %v", got.RepoPaths)
 	}
 }
 
@@ -83,15 +83,15 @@ func TestScan_ignoreExactPath(t *testing.T) {
 	skip := mkRepo(t, root, "skip")
 
 	s := newScanner([]string{skip}, nil)
-	got, err := s.Scan([]string{root})
+	got, err := s.Scan([]string{root}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if slices.Contains(got, skip) {
-		t.Fatalf("skipped repo should not be found: %v", got)
+	if slices.Contains(got.RepoPaths, skip) {
+		t.Fatalf("skipped repo should not be found: %v", got.RepoPaths)
 	}
-	if !slices.Contains(got, keep) {
-		t.Fatalf("kept repo should be found: %v", got)
+	if !slices.Contains(got.RepoPaths, keep) {
+		t.Fatalf("kept repo should be found: %v", got.RepoPaths)
 	}
 }
 
@@ -101,15 +101,15 @@ func TestScan_ignorePattern(t *testing.T) {
 	skip := mkRepo(t, root, "temp-work")
 
 	s := newScanner(nil, []string{"temp-*"})
-	got, err := s.Scan([]string{root})
+	got, err := s.Scan([]string{root}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if slices.Contains(got, skip) {
-		t.Fatalf("pattern-matched repo should not be found: %v", got)
+	if slices.Contains(got.RepoPaths, skip) {
+		t.Fatalf("pattern-matched repo should not be found: %v", got.RepoPaths)
 	}
-	if !slices.Contains(got, keep) {
-		t.Fatalf("kept repo should be found: %v", got)
+	if !slices.Contains(got.RepoPaths, keep) {
+		t.Fatalf("kept repo should be found: %v", got.RepoPaths)
 	}
 }
 
@@ -120,11 +120,78 @@ func TestScan_multipleRoots(t *testing.T) {
 	repo2 := mkRepo(t, r2, "b")
 
 	s := newScanner(nil, nil)
-	got, err := s.Scan([]string{r1, r2})
+	got, err := s.Scan([]string{r1, r2}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(got, repo1) || !slices.Contains(got, repo2) {
-		t.Fatalf("expected both repos in results: %v", got)
+	if !slices.Contains(got.RepoPaths, repo1) || !slices.Contains(got.RepoPaths, repo2) {
+		t.Fatalf("expected both repos in results: %v", got.RepoPaths)
+	}
+}
+
+func TestScan_nonGitDir_found(t *testing.T) {
+	root := t.TempDir()
+	plain := mkDir(t, root, "projectB")
+
+	s := newScanner(nil, nil)
+	got, err := s.Scan([]string{root}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(got.NonGitDirs, plain) {
+		t.Fatalf("expected non-git dir %s in NonGitDirs %v", plain, got.NonGitDirs)
+	}
+	if len(got.RepoPaths) != 0 {
+		t.Fatalf("expected no repos, got: %v", got.RepoPaths)
+	}
+}
+
+func TestScan_nonGitDir_highestLevelOnly(t *testing.T) {
+	root := t.TempDir()
+	top := mkDir(t, root, "work")
+	mkDir(t, root, "work/team") // subdirectory of top — should not appear separately
+
+	s := newScanner(nil, nil)
+	got, err := s.Scan([]string{root}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(got.NonGitDirs, top) {
+		t.Fatalf("expected top-level non-git dir %s in NonGitDirs %v", top, got.NonGitDirs)
+	}
+	sub := filepath.Join(root, "work/team")
+	if slices.Contains(got.NonGitDirs, sub) {
+		t.Fatalf("subdirectory %s should not appear separately in NonGitDirs %v", sub, got.NonGitDirs)
+	}
+}
+
+func TestScan_nonGitDir_notRoot(t *testing.T) {
+	root := t.TempDir() // root itself is not a git repo
+
+	s := newScanner(nil, nil)
+	got, err := s.Scan([]string{root}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if slices.Contains(got.NonGitDirs, root) {
+		t.Fatalf("scan root itself should not appear in NonGitDirs: %v", got.NonGitDirs)
+	}
+}
+
+func TestScan_gitOnly_excludesNonGit(t *testing.T) {
+	root := t.TempDir()
+	mkDir(t, root, "projectB")
+	repo := mkRepo(t, root, "projectA")
+
+	s := newScanner(nil, nil)
+	got, err := s.Scan([]string{root}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.NonGitDirs) != 0 {
+		t.Fatalf("--git-only should yield no NonGitDirs, got: %v", got.NonGitDirs)
+	}
+	if !slices.Contains(got.RepoPaths, repo) {
+		t.Fatalf("expected repo %s in RepoPaths %v", repo, got.RepoPaths)
 	}
 }

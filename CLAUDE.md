@@ -18,7 +18,7 @@ go vet ./...
 
 Binary name: `gitcheck`. Entry point: `main.go` → `cmd/root.go`.
 
-Flags: `--config`, `--verbose`, `--fetch` (live remote fetch; default uses last known state), `--no-color`, `--json`.
+Flags: `--config`, `--verbose`, `--fetch` (live remote fetch; default uses last known state), `--no-color`, `--json`, `--git-only` (only show git repositories, skip non-git directories).
 
 Subcommands: `gitcheck config list|add|remove` — manage scan roots without editing TOML by hand.
 
