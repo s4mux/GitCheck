@@ -9,12 +9,13 @@ $ gitcheck
 
 ~/projects/api               [uncommitted] [ahead 2]
 ~/projects/frontend          [untracked]
+~/projects/scratch           [no git]
 ~/work/client-x              [behind 3]
   └─ vendor/ui-kit           [uncommitted]
 ~/work/infra                 [no remote]
 ```
 
-`gitcheck` scans your configured directories, finds every Git repository, and reports what needs attention — uncommitted changes, untracked files, ahead/behind remote, missing remotes, detached HEAD. Clean repos are silent. Submodules are shown indented under their parent.
+`gitcheck` scans your configured directories, finds every Git repository, and reports what needs attention — uncommitted changes, untracked files, ahead/behind remote, missing remotes, detached HEAD. Directories that contain no Git repository are shown with `[no git]` so nothing falls through the cracks. Clean repos are silent. Submodules are shown indented under their parent.
 
 While running, `gitcheck` shows a live progress display in the terminal — first during the directory scan, then a progress bar as each repo is analyzed. The display erases itself before the final report is printed. It is automatically suppressed when stdout is not a TTY (pipes, redirects) or when `--json` is used.
 
@@ -141,6 +142,7 @@ gitcheck config remove <path>
 | `--fetch` | Fetch from remote before checking ahead/behind (slower, always accurate) |
 | `--no-color` | Disable colored output |
 | `--json` | Output results as JSON (suppresses config path line) |
+| `--git-only` | Show only Git repositories; hide directories that have no Git repo |
 | `--version` | Print version and exit |
 | `--help` | Show help |
 
@@ -163,6 +165,11 @@ gitcheck --verbose
 gitcheck --fetch
 ```
 
+**Git repos only** — hide directories that have no Git repo (pre-v0.2 behaviour):
+```sh
+gitcheck --git-only
+```
+
 **Pipe-friendly output** — color is automatically disabled when stdout is not a TTY:
 ```sh
 gitcheck | grep ahead
@@ -170,7 +177,7 @@ gitcheck | grep ahead
 
 **JSON output** for scripting:
 ```sh
-gitcheck --json | jq '.[] | select(.status.ahead_by > 0) | .path'
+gitcheck --json | jq '.repos[] | select(.status.ahead_by > 0) | .path'
 ```
 
 ---
@@ -185,6 +192,7 @@ gitcheck --json | jq '.[] | select(.status.ahead_by > 0) | .path'
 | `[behind N]` | N remote commits not yet pulled |
 | `[no remote]` | No remote configured |
 | `[detached HEAD]` | Not on a named branch (never shown for submodules — always expected there) |
+| `[no git]` | Directory contains no Git repository (use `--git-only` to hide these) |
 
 Without `--fetch`, ahead/behind counts reflect the last known remote state (last fetch/pull). Pass `--fetch` for live accuracy.
 
@@ -194,8 +202,11 @@ Without `--fetch`, ahead/behind counts reflect the last known remote state (last
 
 - Roots are traversed recursively.
 - The first `.git` found stops recursion — subdirectories of a repo are not scanned.
+- Directories that contain no Git repository (at any depth) are reported as `[no git]` at their highest ancestor level. For example, if `~/work/scratch/` has no repos inside, `~/work/scratch/` is shown — not every subdirectory within it.
+- A directory that is a non-git container but has repos nested inside it is not reported as `[no git]`; the nested repos are shown instead.
 - Submodules are discovered via `.gitmodules` and reported indented under their parent repo.
 - Unreadable directories produce a warning to stderr; scanning continues.
+- Pass `--git-only` to suppress `[no git]` entries entirely.
 
 ---
 
