@@ -24,6 +24,7 @@ var (
 	fetch      bool
 	noColor    bool
 	jsonOut    bool
+	gitOnly    bool
 )
 
 var rootCmd = &cobra.Command{
@@ -46,6 +47,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&fetch, "fetch", false, "fetch from remote before checking ahead/behind state")
 	rootCmd.Flags().BoolVar(&noColor, "no-color", false, "disable colored output")
 	rootCmd.Flags().BoolVar(&jsonOut, "json", false, "output results as JSON")
+	rootCmd.Flags().BoolVar(&gitOnly, "git-only", false, "only show git repositories, skip non-git directories")
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -83,22 +85,23 @@ func run(cmd *cobra.Command, args []string) error {
 	prog := newProgress(os.Stdout, jsonOut)
 	prog.StartScanning()
 
-	paths, err := s.Scan(cfg.Scan.Roots)
+	result, err := s.Scan(cfg.Scan.Roots, gitOnly)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warning: %v\n", err)
 	}
 
-	prog.FoundRepos(len(paths))
-	repos := resolveRepos(paths, fetch, prog)
+	prog.FoundRepos(len(result.RepoPaths))
+	repos := resolveRepos(result.RepoPaths, fetch, prog)
 	prog.Done()
 
 	if jsonOut {
-		return report.RenderJSON(os.Stdout, repos)
+		return report.RenderJSON(os.Stdout, repos, result.NonGitDirs)
 	}
 
 	report.Render(os.Stdout, repos, report.Options{
-		Verbose:  verbose,
-		UseColor: !noColor && report.IsTTY(os.Stdout),
+		Verbose:    verbose,
+		UseColor:   !noColor && report.IsTTY(os.Stdout),
+		NonGitDirs: result.NonGitDirs,
 	})
 	return nil
 }

@@ -12,8 +12,9 @@ import (
 )
 
 type Options struct {
-	Verbose  bool
-	UseColor bool
+	Verbose    bool
+	UseColor   bool
+	NonGitDirs []string
 }
 
 func Render(w io.Writer, repos []git.Repo, opts Options) {
@@ -21,6 +22,7 @@ func Render(w io.Writer, repos []git.Repo, opts Options) {
 		for _, r := range repos {
 			renderRepo(w, r, opts, 0, "")
 		}
+		renderNonGitDirs(w, opts.NonGitDirs, opts)
 		return
 	}
 
@@ -31,15 +33,31 @@ func Render(w io.Writer, repos []git.Repo, opts Options) {
 			renderRepo(w, r, opts, 0, "")
 		}
 	}
+	if len(opts.NonGitDirs) > 0 {
+		hasAny = true
+		renderNonGitDirs(w, opts.NonGitDirs, opts)
+	}
 	if !hasAny {
 		fmt.Fprintln(w, "All repositories clean.")
 	}
 }
 
-func RenderJSON(w io.Writer, repos []git.Repo) error {
+type jsonOutput struct {
+	Repos      []git.Repo `json:"repos"`
+	NonGitDirs []string   `json:"non_git_dirs,omitempty"`
+}
+
+func RenderJSON(w io.Writer, repos []git.Repo, nonGitDirs []string) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	return enc.Encode(repos)
+	return enc.Encode(jsonOutput{Repos: repos, NonGitDirs: nonGitDirs})
+}
+
+func renderNonGitDirs(w io.Writer, dirs []string, opts Options) {
+	tag := colorize("[no git]", colorRed, opts.UseColor)
+	for _, d := range dirs {
+		fmt.Fprintf(w, "%-40s %s\n", homeShortenPath(d), tag)
+	}
 }
 
 func renderRepo(w io.Writer, r git.Repo, opts Options, depth int, parentPath string) {
