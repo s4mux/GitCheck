@@ -52,6 +52,10 @@ Concurrency: `cmd` resolves repo statuses in parallel via a worker pool (`runtim
 - **Error strategy**: per-repo errors are collected and reported at the end (non-fatal); config errors and missing `git` binary are fatal (exit 1).
 - **Testing**: `git` package tested against real temp repos created with `t.TempDir()` — no mocking of the `git` binary.
 
+## Documentation
+
+**Always update `README.md` and `CHANGELOG.md`** when making any user-facing change — new flags, changed behaviour, bug fixes, or removed features. Do this as part of the same change, not as a follow-up.
+
 ## Releasing
 
 Releases are automated via GoReleaser (`.goreleaser.yaml`) and GitHub Actions (`.github/workflows/release.yml`). To cut a release:
