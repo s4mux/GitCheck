@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-05-20
+
+### Added
+
+- Non-git directories are now surfaced in the output (labelled `[no git]`) so missing or misconfigured repos are visible at a glance
+- `--git-only` flag to suppress non-git directories and restore the previous behaviour
+
 ## [0.1.1] - 2026-05-02
 
 ### Added
@@ -32,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parallel repository resolution via a worker pool sized to `runtime.NumCPU()`
 - Pre-built binaries for Linux, macOS, and Windows via GoReleaser and GitHub Actions
 
-[Unreleased]: https://github.com/s4mux/gitcheck/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/s4mux/gitcheck/compare/v0.2.0...HEAD
+[0.1.1]: https://github.com/s4mux/gitcheck/releases/tag/v0.2.0
 [0.1.1]: https://github.com/s4mux/gitcheck/releases/tag/v0.1.1
 [0.1.0]: https://github.com/s4mux/gitcheck/releases/tag/v0.1.0
