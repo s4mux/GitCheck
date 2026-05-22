@@ -73,14 +73,17 @@ func (s *Scanner) scanRoot(root string, gitOnly bool) (ScanResult, error) {
 			}
 			return nil
 		}
-		if !d.IsDir() || path == root {
+		if !d.IsDir() {
 			return nil
 		}
-		if s.Ignore.Match(path) {
+		if path != root && s.Ignore.Match(path) {
 			return filepath.SkipDir
 		}
 		if isGitRepo(path) {
 			return filepath.SkipDir
+		}
+		if path == root {
+			return nil
 		}
 		if isAncestorOfAnyRepo(path, result.RepoPaths) {
 			return nil // descend to find repos inside

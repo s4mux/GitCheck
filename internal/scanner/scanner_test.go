@@ -178,6 +178,22 @@ func TestScan_nonGitDir_notRoot(t *testing.T) {
 	}
 }
 
+func TestScan_rootIsRepo_noGitMetaInNonGitDirs(t *testing.T) {
+	root := mkRepo(t, t.TempDir(), "myrepo")
+
+	s := newScanner(nil, nil)
+	got, err := s.Scan([]string{root}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(got.RepoPaths, root) {
+		t.Fatalf("expected root repo %s in RepoPaths %v", root, got.RepoPaths)
+	}
+	if len(got.NonGitDirs) != 0 {
+		t.Fatalf("expected no NonGitDirs when root is a repo, got: %v", got.NonGitDirs)
+	}
+}
+
 func TestScan_gitOnly_excludesNonGit(t *testing.T) {
 	root := t.TempDir()
 	mkDir(t, root, "projectB")
